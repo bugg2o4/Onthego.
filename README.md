@@ -14,6 +14,6 @@ A full-stack eCommerce web application developed with Python, SQL, HTML, CSS, an
 <p1>Can change status of order which will appear on customer order page - See Image 2 ↑
 <video src=https://github.com/user-attachments/assets/37b509f1-3e7c-4d78-91f7-117c448e0790> </video>
   
-<p1>Can preview card before publishing item</p1>
+<p1>Can preview card before publishing product</p1>
 <video src="https://github.com/user-attachments/assets/e2c47a44-4906-4201-b751-ef346716c7be" loop autoplay muted></video>
 
