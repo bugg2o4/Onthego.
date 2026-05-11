@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Order History</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='orders.css') }}">
+</head>
+<body>
+<a href="{{ url_for('home') }}" class="back-button">← Back</a>
+<div class="container">
+    <h1>Your Order History</h1>
+    <div id="orders"></div>
+</div>
+
+<script>
+
+async function loadOrders() {
+    const res = await fetch("/orders", {
+        credentials: "include"
+    });
+
+    const orders = await res.json();
+
+    const container = document.getElementById("orders");
+
+    container.innerHTML = orders.map(order => {
+
+        let items = [];
+        try {
+            items = typeof order.items === "string"
+                ? JSON.parse(order.items)
+                : order.items || [];
+        } catch {
+            items = [];
+        }
+
+        return `
+        <div class="order-card">
+
+            <!-- HEADER -->
+            <div class="order-header" onclick="this.parentElement.classList.toggle('open')">
+                <div>Order #${order.order_number}</div>
+                <div>$${Number(order.total).toFixed(2)} • ${order.status}</div>
+            </div>
+
+            <!-- BODY -->
+            <div class="order-body">
+
+                <!-- STATUS TRACKER -->
+                <div class="status-tracker">
+                    <div class="step ${order.status === 'Pending' ? 'active' : ''}">Pending</div>
+                    <div class="step ${order.status === 'Processing' ? 'active' : ''}">Processing</div>
+                    <div class="step ${order.status === 'Shipped' ? 'active' : ''}">Shipped</div>
+                    <div class="step ${order.status === 'Delivered' ? 'active' : ''}">Delivered</div>
+                </div>
+
+                <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+                <p><strong>Tracking:</strong> ${order.tracking_number || "N/A"}</p>
+
+                <!-- ITEMS -->
+                <div class="order-items">
+                    ${items.map(i => `
+                        <div class="order-item">
+                            <img src="${i.image}">
+                            <div>
+                                <div>${i.name}</div>
+                                <div>$${i.price} × ${i.quantity || 1}</div>
+                            </div>
+                        </div>
+                    `).join("")}
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="order-actions">
+
+                    <button onclick="reorder('${order.order_number}')">
+                        Reorder
+                    </button>
+
+                    <button onclick="cancelOrder('${order.order_number}')">
+                        Cancel Order
+                    </button>
+
+                </div>
+
+            </div>
+        </div>
+        `;
+    }).join("");
+}
+
+loadOrders();
+
+async function reorder(orderNumber) {
+    const res = await fetch("/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ order_number: orderNumber })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        alert("Items added to cart!");
+        window.location.href = "/checkout";
+    } else {
+        alert(data.message || "Reorder failed");
+    }
+}
+
+async function cancelOrder(orderNumber) {
+    const res = await fetch("/cancel-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ order_number: orderNumber })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        alert("Order cancelled");
+        loadOrders();
+    } else {
+        alert(data.message || "Cannot cancel order");
+    }
+}
+
+</script>
+
+</body>
+</html>

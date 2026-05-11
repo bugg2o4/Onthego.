@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+
+<a href="{{ url_for('home') }}" class="back-button">← Back</a>
+
+<div class="container">
+
+<div class="card">
+    <h2>Total Earnings</h2>
+    <h1 id="earnings">$0</h1>
+</div>
+
+<div class="analytics-grid">
+
+    <div class="analytics-card">
+        <h3>Total Orders</h3>
+        <h1 id="totalOrders">0</h1>
+    </div>
+
+    <div class="analytics-card">
+        <h3>Pending</h3>
+        <h1 id="pendingOrders">0</h1>
+    </div>
+
+    <div class="analytics-card">
+        <h3>Shipped</h3>
+        <h1 id="shippedOrders">0</h1>
+    </div>
+
+    <div class="analytics-card">
+        <h3>Delivered</h3>
+        <h1 id="deliveredOrders">0</h1>
+    </div>
+
+    <div class="analytics-card">
+        <h3>Avg Order</h3>
+        <h1 id="avgOrder">$0</h1>
+    </div>
+
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Track</th>
+                <th>User</th>
+                <th>Total</th>
+                <th>Items</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="ordersTable"></tbody>
+    </table>
+</div>
+
+<h2>Published Products</h2>
+
+<div id="admin-product-grid"></div>
+
+<div class="product-builder">
+    <div class="card add-product">
+        <h2>Add Product</h2>
+
+        <input type="text" id="name" placeholder="Product Name">
+        <input type="text" id="company" placeholder="Business Name">
+        <div class="input-group">
+        <label>IMAGE</label>
+        <div id="dropZone" class="drop-zone">
+            Drag & Drop Image Here or Click to Upload
+        <input type="file" id="imageUpload" accept="image/*" hidden>
+        </div>
+</div>
+        <textarea id="desc" placeholder="Description"></textarea>
+        <input type="number" id="price" placeholder="Price">
+
+        <select id="category">
+            <option value="women">Women</option>
+            <option value="men">Men</option>
+            <option value="kids">Kids</option>
+            <option value="pets">Pets</option>
+            <option value="accessories">Accessories</option>
+        </select>
+
+        <button onclick="addProduct()">Add Product</button>
+    </div>
+
+    <div class="preview-wrapper">
+
+        <div class="product-card" id="preview-card">
+
+            <div class="product-tumb">
+                <img id="preview-image" src="https://via.placeholder.com/400x300?text=Preview" />
+                <div class="product-hover-desc">
+                    <p id="preview-desc">Product description preview...</p>
+                </div>
+            </div>
+
+            <div class="product-details">
+                <span class="product-catagory" id="preview-category">Category</span>
+
+                <h4 id="preview-title">Product Name</h4>
+
+                <div class="product-bottom-details">
+
+                    <div class="product-price" id="preview-price">
+                        $0.00
+                    </div>
+
+                    <div class="product-links">
+                        <a href="#">
+                            <i class="fa fa-shopping-cart"></i>
+                        </a>
+
+                        <a href="#">
+                            <i class="fa fa-heart"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+</div>
+
+
+<div id="editModal" class="modal hidden">
+    <div class="modal-content">
+        <h2>Edit Product</h2>
+
+        <input type="hidden" id="edit-id">
+
+        <input type="text" id="edit-name" placeholder="Product Name">
+        <input type="number" id="edit-price" placeholder="Price">
+        <textarea id="edit-desc" placeholder="Description"></textarea>
+        <input type="text" id="edit-image" placeholder="Image URL">
+
+        <div class="modal-actions">
+            <button onclick="saveEdit()">Save</button>
+            <button onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+let uploadedImageUrl = "";
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadAdmin();
+    loadAdminProducts();
+
+    setInterval(loadAdmin, 4000);
+
+    const fields = ["name", "company", "desc", "price", "category"];
+
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        el.addEventListener("input", updatePreview);
+        el.addEventListener("change", updatePreview);
+    });
+
+    updatePreview();
+});
+
+async function loadAdmin() {
+    const res = await fetch("/admin/data");
+    const data = await res.json();
+
+    const a = data.analytics || {};
+
+    document.getElementById("totalOrders").textContent = a.total_orders ?? 0;
+    document.getElementById("pendingOrders").textContent = a.pending ?? 0;
+    document.getElementById("shippedOrders").textContent = a.shipped ?? 0;
+    document.getElementById("deliveredOrders").textContent = a.delivered ?? 0;
+
+    document.getElementById("avgOrder").textContent =
+        "$" + (a.avg_order ?? 0).toFixed(2);
+
+    document.getElementById("earnings").textContent =
+        "$" + Number(data.earnings || 0).toFixed(2);
+
+    // ---------- ORDERS TABLE ----------
+    const table = document.getElementById("ordersTable");
+    table.innerHTML = "";
+
+    (data.orders || []).forEach(order => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${order.order_number || ""}</td>
+            <td>${order.tracking_number || ""}</td>
+            <td>${order.user || ""}</td>
+            <td>$${order.total || 0}</td>
+            <td>
+                ${(order.items || [])
+                    .map(i => `${i.name} (x${i.quantity})`)
+                    .join("<br>")}
+            </td>
+            <td>
+                <select onchange="updateStatus('${order.order_number}', this.value)">
+                    <option ${order.status === "Pending" ? "selected" : ""}>Pending</option>
+                    <option ${order.status === "Processing" ? "selected" : ""}>Processing</option>
+                    <option ${order.status === "Shipped" ? "selected" : ""}>Shipped</option>
+                    <option ${order.status === "Delivered" ? "selected" : ""}>Delivered</option>
+                </select>
+            </td>
+        `;
+
+        table.appendChild(tr);
+    });
+}
+
+async function updateStatus(orderNumber, status) {
+    await fetch("/admin/update-order-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            order_number: orderNumber,
+            status: status
+        })
+    });
+
+    loadAdmin();
+}
+
+async function loadAdminProducts() {
+    const res = await fetch("/admin/products");
+    const products = await res.json();
+
+    const grid = document.getElementById("admin-product-grid");
+    grid.innerHTML = "";
+
+    products.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "admin-card";
+
+        card.innerHTML = `
+            <img src="${product.image}" />
+            <h3>${product.name}</h3>
+            <p>$${product.price}</p>
+
+            <div class="admin-actions">
+                <button class="edit-btn">Edit</button>
+                <button class="delete-btn">Delete</button>
+            </div>
+        `;
+
+        card.querySelector(".delete-btn").addEventListener("click", async () => {
+            await fetch("/admin/delete-product", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: product.id })
+            });
+
+            loadAdminProducts();
+        });
+
+        card.querySelector(".edit-btn").addEventListener("click", () => {
+            document.getElementById("edit-id").value = product.id;
+            document.getElementById("edit-name").value = product.name;
+            document.getElementById("edit-price").value = product.price;
+            document.getElementById("edit-desc").value = product.description || "";
+            document.getElementById("edit-image").value = product.image;
+
+            document.getElementById("editModal").classList.remove("hidden");
+        });
+
+        grid.appendChild(card);
+    });
+}
+
+
+loadAdminProducts();
+
+
+async function saveEdit() {
+    const res = await fetch("/admin/edit-product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            id: document.getElementById("edit-id").value,
+            name: document.getElementById("edit-name").value,
+            price: document.getElementById("edit-price").value,
+            description: document.getElementById("edit-desc").value,
+            image: document.getElementById("edit-image").value
+        })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        closeModal();
+        loadAdminProducts();
+    } else {
+        alert("Failed to update product");
+    }
+}
+
+function closeModal() {
+    document.getElementById("editModal").classList.add("hidden");
+}
+
+
+async function addProduct() {
+    const name = document.getElementById("name").value;
+    const company = document.getElementById("company").value;
+    const image = uploadedImageUrl;
+    const description = document.getElementById("desc").value;
+    const price = document.getElementById("price").value;
+    const category = document.getElementById("category").value;
+
+    const res = await fetch("/admin/add-product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: `${company} - ${name}`,
+            description,
+            price,
+            image,
+            category
+        })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        alert("Product added!");
+
+        loadAdminProducts();
+
+        document.getElementById("name").value = "";
+        document.getElementById("company").value = "";
+        document.getElementById("image").value = "";
+        document.getElementById("desc").value = "";
+        document.getElementById("price").value = "";
+    } else {
+        alert("Error adding product");
+    }
+}
+
+function updatePreview() {
+    const name = document.getElementById("name").value;
+    const company = document.getElementById("company").value;
+    const desc = document.getElementById("desc").value;
+    const price = document.getElementById("price").value;
+    const category = document.getElementById("category").value;
+
+    const image = uploadedImageUrl;
+
+    document.getElementById("preview-title").textContent =
+        (company || name)
+            ? `${company ? company + " - " : ""}${name}`
+            : "Product Name";
+
+    document.getElementById("preview-price").textContent =
+        price ? `$${price}` : "$0.00";
+
+    document.getElementById("preview-image").src =
+        image || "";
+
+    document.getElementById("preview-desc").textContent =
+        desc || "No description yet...";
+
+    document.getElementById("preview-category").textContent =
+        category || "Category";
+}
+
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("imageUpload");
+
+dropZone.addEventListener("click", () => {
+    fileInput.click();
+});
+
+if (dropZone && fileInput) {
+
+    dropZone.addEventListener("click", () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        uploadImage(file);
+    });
+
+    dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("dragover");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("dragover");
+
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+
+        uploadImage(file);
+    });
+}
+async function uploadImage(file) {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const res = await fetch("/upload-image", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+        alert("Upload failed");
+        return;
+    }
+
+    uploadedImageUrl = data.url;
+
+    document.getElementById("preview-image").src = data.url;
+
+    updatePreview();
+}
+
+</script>
+</body>
+</html>

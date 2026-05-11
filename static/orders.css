@@ -1,0 +1,128 @@
+:root {
+  --primary: #000;
+  --secondary: #fff;
+  --accent: #312e2e;
+  --shadow: 6px 6px 0px var(--primary);
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Courier New', monospace;
+}
+
+body {
+  background: var(--secondary);
+  margin: 0;
+  padding: 40px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.back-button {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 600;
+  color: #242424;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  z-index: 9999;
+  transition: 0.2s ease;
+}
+
+.back-button:hover {
+  transform: translateX(-3px);
+}
+
+.container {
+  width: 800px;
+  max-width: 95%;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* ORDER CARD */
+.order-card {
+  border: 2px solid var(--primary);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  background: var(--secondary);
+  overflow: hidden;
+  transition: 0.3s;
+}
+
+.order-header {
+  background: var(--accent);
+  color: white;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.order-body {
+  padding: 15px;
+  display: none;
+}
+
+.order-card.open .order-body {
+  display: block;
+}
+
+/* ITEMS */
+.order-item {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+}
+
+.order-item img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+}
+
+/* STATUS TRACKER */
+.status-tracker {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.step {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  border: 2px solid var(--primary);
+  margin: 0 5px;
+  background: white;
+}
+
+.step.active {
+  background: var(--accent);
+  color: white;
+}
+
+button {
+  padding: 8px 12px;
+  border: 2px solid var(--primary);
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0px var(--primary);
+}

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Onthego.</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    </head>
+    <body class="checkout-page">
+		<a href="{{ url_for('home') }}" class="back-button">← Back</a>
+<div id="wrapper">
+	<div class="order">
+    	<h2>Order Summary</h2>
+    	<div id="cart-items"></div>
+    	<h4 class="ship">Shipping: FREE</h4>
+    	<hr>
+    	<h3 class="total">TOTAL: $0.00</h3>
+	</div>
+	<div class="container2">
+		<div class="checkout">
+			<p><i class="fas fa-check-circle"></i>Shipping</p>
+			<p><i class="fas fa-check-circle"></i>Checkout</p>
+			<p id="confirmation-step"><i class="fas fa-check-circle"></i>Confirmation</p>
+
+			<div class="payment">
+				<div class="content">
+					<div class="infos">
+						<div class="method">
+							<h2>Choose a payment method</h2>
+							<img src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/1978060/visa.png' alt='' class="visa">
+							<img src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/1978060/mastercard.png' alt='' class="mastercard">
+							<img src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/1978060/paypal.png' alt='' class="paypal">
+						</div>
+						<div class="cardNumber">
+							<p class="title">Credit card number</p><br>
+							<input type="text" class="number">
+							<input type="text" class="number">
+							<input type="text" class="number">
+							<input type="text" class="number">
+						</div>
+						<div class="cardHolderName">
+							<p class="title">Card holder name</p>
+							<input type="text">
+						</div>
+						<div class="expiration">
+							<p class="title">Expiration date</p>
+							<select>
+								<option>Month</option>
+								<option>01</option>
+								<option>02</option>
+								<option>03</option>
+								<option>04</option>
+								<option>05</option>
+								<option>06</option>
+								<option>07</option>
+								<option>08</option>
+								<option>09</option>
+								<option>10</option>
+								<option>11</option>
+								<option>12</option>
+
+							</select>
+
+							<select>
+								<option>Year</option>
+								<option>2019</option>
+								<option>2020</option>
+								<option>2021</option>
+								<option>2022</option>
+								<option>2023</option>
+								<option>2024</option>
+								<option>2025</option>
+								<option>2026</option>
+							</select>
+						</div>
+						<div class="security">
+							<p class="title">Security</p>
+							<input type="text">
+						</div>
+						<button id="checkout-btn">Checkout</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="order-modal" class="order-modal hidden">
+    <div class="order-modal-content">
+        <h1>ORDER CONFIRMED</h1>
+        <p class="sub">Thank you for your purchase!</p>
+
+        <div id="order-summary"></div>
+
+        <div class="order-meta">
+            <p><strong>Tracking #:</strong> <span id="tracking-number"></span></p>
+            <p><strong>Invoice #:</strong> <span id="invoice-number"></span></p>
+        </div>
+
+        <h2 id="order-total"></h2>
+
+        <a href="{{ url_for('home') }}" class="close-button">Continue Shopping</a>
+    </div>
+</div>
+<script>
+    function updateTotal() {
+    let total = 0;
+
+    document.querySelectorAll(".item").forEach(item => {
+        const price = parseFloat(
+            item.querySelector(".price").textContent.replace("$", "")
+        );
+
+        const qty = parseInt(
+            item.querySelector(".quantity").textContent.replace("Qty: ", "")
+        );
+
+        total += price * qty;
+    });
+
+    document.querySelector(".total").textContent =
+        "TOTAL: $" + total.toFixed(2);
+}
+
+    document.getElementById("checkout-btn")?.addEventListener("click", async () => {
+    try {
+        const items = await fetch("/cart", {
+            credentials: "include"
+        }).then(r => r.json());
+
+        const total = items.reduce((sum, item) => {
+            return sum + (item.price * item.quantity);
+        }, 0);
+
+        const res = await fetch("/checkout", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+            body: JSON.stringify({
+                items: items,
+                total: total
+            })
+        });
+
+        const data = await res.json();
+
+        console.log("CHECKOUT RESPONSE:", data);
+
+        if (!data.success) {
+            alert(data.message || "Checkout failed");
+            return;
+        }
+
+        await fetch("/cart/clear", {
+            method: "POST",
+            credentials: "include"
+        });
+
+        document.getElementById("order-modal").classList.remove("hidden");
+
+        document.getElementById("order-total").textContent =
+            "$" + total.toFixed(2);
+
+        document.getElementById("tracking-number").textContent =
+            data.tracking_number;
+
+        document.getElementById("invoice-number").textContent =
+            data.order_number;
+
+    } catch (err) {
+        console.error(err);
+        alert("Checkout failed (server error)");
+    }
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+    const cartItems = document.getElementById("cart-items");
+    const totalEl = document.querySelector(".total");
+
+    const res = await fetch("/cart", {
+        credentials: "include"
+    });
+
+    const cart = await res.json();
+
+    let total = 0;
+    cartItems.innerHTML = "";
+
+    cart.forEach(item => {
+        total += item.price * item.quantity;
+
+        const div = document.createElement("div");
+        div.className = "item";
+
+        div.innerHTML = `
+    <img src="${item.image}">
+    <div class="info">
+        <p>${item.name}</p>
+        <p class="quantity">Qty: ${item.quantity}</p>
+    </div>
+    <button class="remove-btn" data-id="${item.id}">✕</button>
+    <div class="price">$${item.price}</div>
+`;
+
+        cartItems.appendChild(div);
+    });
+
+    totalEl.textContent = "TOTAL: $" + total.toFixed(2);
+});
+
+document.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".remove-btn");
+    if (!btn) return;
+
+    const itemEl = btn.closest(".item");
+    const productId = Number(btn.dataset.id);
+
+    const res = await fetch("/cart/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+            product_id: productId
+        })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        itemEl.remove();
+        updateTotal();
+    } else {
+        alert(data.message || "Failed to remove item");
+    }
+});
+</script>
+</body>
+</html>

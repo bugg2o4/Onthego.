@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Onthego. — Travel & Outdoor Gear Marketplace</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles2.css') }}">
+    </head>
+    <body>
+    <a href="{{ url_for('home') }}" class="back-button">← Back</a>
+<div class="container" id="container">
+
+    <div class="form-container sign-up-container">
+        <form id="signupForm">
+            <h1>CREATE ACCOUNT</h1>
+            <div class="input-group">
+                <label>ACCOUNT TYPE</label>
+                <select id="roleSelectSignUp">
+                    <option value="customer">Customer</option>
+                    <option value="business">Business</option>
+                </select>
+    </div>
+
+<div class="input-group" id="businessNameField" style="display:none;">
+    <label>BUSINESS NAME</label>
+    <input type="text" placeholder="Your business name">
+</div>
+
+            <div class="input-group">
+                <label>NAME</label>
+                <input type="text" id="name" placeholder="Your name">
+            </div>
+
+            <div class="input-group">
+                <label>EMAIL</label>
+                <input type="email" id="email" placeholder="your@email.com">
+            </div>
+
+            <div class="input-group">
+                <label>PASSWORD</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+
+            <button>SIGN UP</button>
+        </form>
+    </div>
+
+    <div class="form-container sign-in-container">
+        <form id="loginForm">
+            <h1>LOGIN</h1>
+
+            <div class="input-group">
+                <label>ACCOUNT TYPE</label>
+                <select id="roleSelectSignIn">
+                    <option value="customer">Customer</option>
+                    <option value="business">Business</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>EMAIL</label>
+                <input type="email" id="loginEmail" placeholder="your@email.com">
+            </div>
+
+            <div class="input-group">
+                <label>PASSWORD</label>
+                <input type="password" id="loginPassword" placeholder="••••••••">
+            </div>
+
+            <button>SIGN IN</button>
+
+            <div class="divider">OR</div>
+
+            <div class="social-login">
+                <div class="social-btn">G</div>
+                <div class="social-btn">F</div>
+                <div class="social-btn">X</div>
+            </div>
+        </form>
+    </div>
+
+    <div class="overlay-container">
+        <div class="overlay">
+            <div class="overlay-panel overlay-left">
+                <h1>WELCOME</h1>
+                <p>Login with your info</p>
+                <button class="ghost" id="signIn">SIGN IN</button>
+            </div>
+
+            <div class="overlay-panel overlay-right">
+                <h1 id="overlayGreeting">HELLO FRIEND</h1>
+                <p>Start your journey</p>
+                <button class="ghost" id="signUp">SIGN UP</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const signUpButton = document.getElementById('signUp');
+    const signInButton = document.getElementById('signIn');
+    const container = document.getElementById('container');
+
+    const overlayGreeting = document.getElementById("overlayGreeting");
+    const roleSignIn = document.getElementById("roleSelectSignIn");
+    const roleSignUp = document.getElementById("roleSelectSignUp");
+    const businessField = document.getElementById("businessNameField");
+
+    signUpButton.addEventListener('click', () => {
+        container.classList.add("right-panel-active");
+    });
+
+    signInButton.addEventListener('click', () => {
+        container.classList.remove("right-panel-active");
+    });
+
+    roleSignIn.addEventListener("change", () => {
+        overlayGreeting.innerText =
+            roleSignIn.value === "business"
+                ? "HELLO ADMIN"
+                : "HELLO FRIEND";
+    });
+
+    roleSignUp.addEventListener("change", () => {
+        businessField.style.display =
+            roleSignUp.value === "business" ? "block" : "none";
+    });
+
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const signupForm = document.getElementById("signupForm");
+    const loginForm = document.getElementById("loginForm");
+
+    signupForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const data = {
+            name: document.getElementById("name").value,
+            email: document.getElementById("email").value,
+            password: document.getElementById("password").value,
+            role: document.getElementById("roleSelectSignUp").value
+        };
+
+        const res = await fetch("/signup", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+            body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            window.location.href = "/";
+        } else {
+            alert(result.message || "Signup failed");
+        }
+    });
+
+    loginForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const data = {
+            email: document.getElementById("loginEmail").value,
+            password: document.getElementById("loginPassword").value
+        };
+
+        const res = await fetch("/login", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+            body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            window.location.href = "/";
+        } else {
+            alert("Invalid login");
+        }
+    });
+});
+</script>
+</body>
