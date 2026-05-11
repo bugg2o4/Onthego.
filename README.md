@@ -1,5 +1,5 @@
 # Onthego.
-Ecommerce Website
+A full-stack eCommerce web application developed with Python, SQL, HTML, CSS, and JavaScript. The platform includes separate customer and admin/business authentication systems, a product search bar, wishlist functionality, and a checkout page for users. Administrators can manage products through a dashboard that allows editing, publishing, and tracking store earnings. The project focuses on both frontend design and backend database integration to create a online shopping experience.
 <img width="1147" height="1509" alt="Image" src="https://github.com/user-attachments/assets/22ee0c2b-c864-44c1-8e07-2546cacbc9df" />
 <video src="https://github.com/user-attachments/assets/dfa6b3fe-aed6-4c47-bb26-c30f009659b3" loop autoplay muted></video>
 <p1>Status Bar is updated based on admin/business side</p1>
